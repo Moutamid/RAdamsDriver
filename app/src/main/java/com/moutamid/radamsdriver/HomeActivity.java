@@ -1,10 +1,15 @@
 package com.moutamid.radamsdriver;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.provider.OpenableColumns;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,9 +24,27 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.fxn.stash.Stash;
 import com.moutamid.radamsdriver.databinding.ActivityHomeBinding;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Date;
+
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class HomeActivity extends AppCompatActivity {
+    private static final String TAG = "HomeActivity";
+    private ProgressDialog progressDialog;
 
     private ActivityHomeBinding b;
 
@@ -35,21 +58,112 @@ public class HomeActivity extends AppCompatActivity {
         b = ActivityHomeBinding.inflate(getLayoutInflater());
         setContentView(b.getRoot());
 
-
-
         selectedImages = new ArrayList<>();
 
         // Launch file picker when the GridView is clicked
         b.addImageBtn.setOnClickListener(v -> openFilePicker());
 
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setCancelable(false);
+        progressDialog.setMessage("Loading...");
+
         b.submitBtn.setOnClickListener(v -> {
             if (b.hCodeEditText.getText().toString().isEmpty())
                 return;
+            progressDialog.show();
+            new Thread(() -> {
 
-            Toast.makeText(this, "Success", Toast.LENGTH_SHORT).show();
-            finish();
+                try {
+                    OkHttpClient client = new OkHttpClient().newBuilder()
+                            .build();
+                    MediaType mediaType = MediaType.parse("text/plain");
+                    MultipartBody.Builder builder = new MultipartBody.Builder().setType(MultipartBody.FORM)
+                            .addFormDataPart("vehicle", Stash.getString(Constants.VEHICLE))
+                            .addFormDataPart("driver", Stash.getString(Constants.FULL_NAME))
+                            .addFormDataPart("h_code", b.hCodeEditText.getText().toString())
+                            .addFormDataPart("date", new Date().toString());
+
+                    for (Uri uri : selectedImages) {
+                        File file = getFile(uri);
+
+                        RequestBody requestBody = RequestBody.create(MediaType.parse("application/octet-stream"),
+                                file);
+                        builder.addFormDataPart("images", "image.jpg", requestBody);
+                    }
+
+                    MultipartBody requestBody = builder.build();
+
+                    Request request = new Request.Builder()
+                            .url("http://198.244.190.177/api/ticket/create")
+                            .method("POST", requestBody)
+                            .addHeader("Authorization", "Bearer " + Stash.getString(Constants.TOKEN))
+                            .build();
+                    Response response = client.newCall(request).execute();
+
+                    String message = response.body().string();
+                    if (message.contains("Ticket added successfully!")) {
+                        runOnUiThread(() -> {
+                            progressDialog.dismiss();
+
+                            Toast.makeText(this, "Success", Toast.LENGTH_SHORT).show();
+                            finish();
+                        });
+                    }
+
+                } catch (IOException e) {
+                    Log.d(TAG, "onCreate/84:  : " + e.getMessage());
+                    Log.d(TAG, "onCreate/84:  : " + e.getStackTrace().toString());
+                    Log.d(TAG, "onCreate/84:  : " + e.getLocalizedMessage());
+//                    Log.d(TAG, "onCreate/84:  : " + e.getCause().toString());
+                    runOnUiThread(() -> {
+                        progressDialog.dismiss();
+                    });
+                }
+
+            }).start();
+
         });
+
+        b.numberPlateTv.setText(Stash.getString(Constants.VEHICLE));
     }
+
+    public File getFile(Uri uri) throws IOException {
+        File destinationFilename = new File(getFilesDir().getPath() + File.separatorChar + queryName(HomeActivity.this, uri));
+        try (InputStream ins = getContentResolver().openInputStream(uri)) {
+            createFileFromStream(ins, destinationFilename);
+        } catch (Exception ex) {
+            Log.e("Save File", ex.getMessage());
+            ex.printStackTrace();
+        }
+        return destinationFilename;
+    }
+
+    public static void createFileFromStream(InputStream ins, File destination) {
+        try (OutputStream os = new FileOutputStream(destination)) {
+            byte[] buffer = new byte[4096];
+            int length;
+            while ((length = ins.read(buffer)) > 0) {
+                os.write(buffer, 0, length);
+            }
+            os.flush();
+        } catch (Exception ex) {
+            Log.e("Save File", ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
+
+    private static String queryName(Context context, Uri uri) {
+        Cursor returnCursor =
+                context.getContentResolver().query(uri, null, null, null, null);
+        assert returnCursor != null;
+        int nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+        returnCursor.moveToFirst();
+        String name = returnCursor.getString(nameIndex);
+        returnCursor.close();
+        return name;
+    }
+
+
 
     private void openFilePicker() {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
