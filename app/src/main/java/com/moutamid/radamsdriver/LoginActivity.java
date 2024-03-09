@@ -59,7 +59,7 @@ public class LoginActivity extends AppCompatActivity {
                     RequestBody body = RequestBody.create(mediaType, jsonObject.toString());
 
                     Request request = new Request.Builder()
-                            .url("http://198.244.190.177/api/login")
+                            .url("http://app.ra-app.co.uk/api/login")
                             .method("POST", body)
                             .addHeader("Content-Type", "application/json")
                             .build();
@@ -67,18 +67,21 @@ public class LoginActivity extends AppCompatActivity {
                     Response response = client.newCall(request).execute();
                     String responseData = response.body().string();
 
-                    if (!responseData.contains("\"token\":")) {
+                    Log.d(TAG, "onCreate/68: response : " + responseData);
+                    JSONObject responseObject = new JSONObject(responseData);
+                    Log.d(TAG, "onCreate/68: response : " + responseObject);
+                    Log.d(TAG, "onCreate/73:  : ");
+
+                    String permission = responseObject.getJSONObject("user").getString("permission");
+
+//                    if (!responseData.contains("\"token\":")) {
+                    if (permission.equals("Admin")) {
                         runOnUiThread(() -> {
                             progressDialog.dismiss();
                             Toast.makeText(LoginActivity.this, "Login failed!", Toast.LENGTH_SHORT).show();
                         });
                         return;
                     }
-
-                    Log.d(TAG, "onCreate/68: response : " + responseData);
-                    JSONObject responseObject = new JSONObject(responseData);
-                    Log.d(TAG, "onCreate/68: response : " + responseObject);
-                    Log.d(TAG, "onCreate/73:  : ");
 
                     Stash.put(Constants.TOKEN, responseObject.getString("token"));
                     Stash.put(Constants.FULL_NAME,

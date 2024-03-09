@@ -26,9 +26,8 @@
             android:id="@+id/name_textview_create_profile"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter email"
+            android:hint="Enter username"
             android:inputType="text"
-            android:text="admin"
             android:maxLines="1" />
 
     </com.google.android.material.textfield.TextInputLayout>
@@ -44,7 +43,6 @@
             android:id="@+id/password_textview_create_profile"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="admin"
             android:hint="Enter password"
             android:inputType="textPassword"
             android:maxLines="1" />

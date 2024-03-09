@@ -10,6 +10,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.fxn.stash.Stash;
 import com.moutamid.radamsdriver.databinding.ActivityWelcomeBinding;
 
+import java.util.Date;
+
 public class WelcomeActivity extends AppCompatActivity {
     private static final String TAG = "WelcomeActivity";
 
@@ -33,6 +35,8 @@ public class WelcomeActivity extends AppCompatActivity {
         Log.d(TAG, "onCreate/29: NAME : " +Stash.getString(Constants.FULL_NAME));
         Log.d(TAG, "onCreate/29: TOKEN : " +Stash.getString(Constants.TOKEN));
         Log.d(TAG, "onCreate/29:  VEHICLE: " +Stash.getString(Constants.VEHICLE));
+
+        Log.d(TAG, "onCreate/37: DATE: : " +new Date());
 
         b.ticketsView.setOnClickListener(v -> {
             startActivity(new Intent(WelcomeActivity.this, HomeActivity.class));
