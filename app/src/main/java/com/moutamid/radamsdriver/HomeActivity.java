@@ -4,8 +4,10 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.util.DisplayMetrics;
@@ -24,14 +26,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.fxn.stash.Stash;
 import com.moutamid.radamsdriver.databinding.ActivityHomeBinding;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -49,6 +49,7 @@ public class HomeActivity extends AppCompatActivity {
     private ActivityHomeBinding b;
 
     private static final int PICK_IMAGES_REQUEST = 1;
+    private static final int PICK_CAMERA_REQUEST = 2222;
 
     private ArrayList<Uri> selectedImages;
 
@@ -61,7 +62,13 @@ public class HomeActivity extends AppCompatActivity {
         selectedImages = new ArrayList<>();
 
         // Launch file picker when the GridView is clicked
-        b.addImageBtn.setOnClickListener(v -> openFilePicker());
+        b.addImageBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+//                openFilePicker();
+                openCameraPicker();
+            }
+        });
 
         progressDialog = new ProgressDialog(this);
         progressDialog.setCancelable(false);
@@ -127,6 +134,68 @@ public class HomeActivity extends AppCompatActivity {
         b.numberPlateTv.setText(Stash.getString(Constants.VEHICLE));
     }
 
+    private void openCameraPicker() {
+        Intent camera_intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        startActivityForResult(camera_intent, PICK_CAMERA_REQUEST);
+    }
+
+    public Uri bitmapToFile(Bitmap bitmap) { // File name like "image.png"
+        //create a file to write bitmap data
+        File file = null;
+        try {
+            file = new File(Environment.getExternalStorageDirectory() + File.separator
+                    + System.currentTimeMillis() + "image.png");
+            file.createNewFile();
+
+//Convert bitmap to byte array
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.PNG, 0, bos); // YOU can also save it in JPEG
+            byte[] bitmapdata = bos.toByteArray();
+
+//write the bytes in file
+            FileOutputStream fos = new FileOutputStream(file);
+            fos.write(bitmapdata);
+            fos.flush();
+            fos.close();
+            return Uri.fromFile(file);
+//            return file;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Uri.fromFile(file);
+        }
+    }
+
+
+    /*private Uri bitmapToUri(Bitmap bitmap) {
+        File tempDir = Environment.getExternalStorageDirectory();
+        tempDir = new File(tempDir.getAbsolutePath());//+ "/.temp/"
+        tempDir.mkdir();
+        File tempFile = null;
+        try {
+            tempFile = File.createTempFile("Image-" + System.currentTimeMillis(), ".jpg", tempDir);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+        byte[] bitmapData = bytes.toByteArray();
+
+        //write the bytes in file
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(tempFile);
+
+            fos.write(bitmapData);
+            fos.flush();
+            fos.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return Uri.fromFile(tempFile);
+    }*/
+
     public File getFile(Uri uri) throws IOException {
         File destinationFilename = new File(getFilesDir().getPath() + File.separatorChar + queryName(HomeActivity.this, uri));
         try (InputStream ins = getContentResolver().openInputStream(uri)) {
@@ -163,8 +232,6 @@ public class HomeActivity extends AppCompatActivity {
         return name;
     }
 
-
-
     private void openFilePicker() {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -176,6 +243,14 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == PICK_CAMERA_REQUEST) {
+            // BitMap is data structure of image file which store the image in memory
+            Bitmap photo = (Bitmap) data.getExtras().get("data");
+            // Set the image in imageview for display
+            selectedImages.add(bitmapToFile(photo));
+            return;
+        }
 
         if (requestCode == PICK_IMAGES_REQUEST && resultCode == RESULT_OK) {
             if (data != null) {
