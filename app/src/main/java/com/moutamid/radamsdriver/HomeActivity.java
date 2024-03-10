@@ -2,6 +2,7 @@ package com.moutamid.radamsdriver;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -19,6 +20,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -65,8 +67,19 @@ public class HomeActivity extends AppCompatActivity {
         b.addImageBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                AlertDialog dialog;
+                AlertDialog.Builder builder = new AlertDialog.Builder(HomeActivity.this);
+                final CharSequence[] items = {"Gallery", "Camera"};
+                builder.setItems(items, (dialog1, position) -> {
+                    if (position == 0) {
+                        openFilePicker();
+                    } else openCameraPicker();
+                });
+
+                dialog = builder.create();
+                dialog.show();
 //                openFilePicker();
-                openCameraPicker();
+//                openCameraPicker();
             }
         });
 
@@ -143,7 +156,8 @@ public class HomeActivity extends AppCompatActivity {
         //create a file to write bitmap data
         File file = null;
         try {
-            file = new File(Environment.getExternalStorageDirectory() + File.separator
+            file = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+                    + File.separator
                     + System.currentTimeMillis() + "image.png");
             file.createNewFile();
 
@@ -160,7 +174,7 @@ public class HomeActivity extends AppCompatActivity {
             return Uri.fromFile(file);
 //            return file;
         } catch (Exception e) {
-            e.printStackTrace();
+            runOnUiThread(() -> Toast.makeText(HomeActivity.this, "" + e.getMessage(), Toast.LENGTH_SHORT).show());
             return Uri.fromFile(file);
         }
     }
@@ -247,8 +261,9 @@ public class HomeActivity extends AppCompatActivity {
         if (requestCode == PICK_CAMERA_REQUEST) {
             // BitMap is data structure of image file which store the image in memory
             Bitmap photo = (Bitmap) data.getExtras().get("data");
-            // Set the image in imageview for display
+//            b.addImageBtn.setImageBitmap(photo);
             selectedImages.add(bitmapToFile(photo));
+            initRecyclerView();
             return;
         }
 
