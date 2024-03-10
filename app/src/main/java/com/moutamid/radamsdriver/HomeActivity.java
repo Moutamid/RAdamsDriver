@@ -2,7 +2,6 @@ package com.moutamid.radamsdriver;
 
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -53,7 +52,8 @@ public class HomeActivity extends AppCompatActivity {
     private static final int PICK_IMAGES_REQUEST = 1;
     private static final int PICK_CAMERA_REQUEST = 2222;
 
-    private ArrayList<Uri> selectedImages;
+    private ArrayList<File> selectedImages;
+//    private ArrayList<Uri> uriImagesList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,7 +84,7 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         progressDialog = new ProgressDialog(this);
-        progressDialog.setCancelable(false);
+        progressDialog.setCancelable(true);
         progressDialog.setMessage("Loading...");
 
         b.submitBtn.setOnClickListener(v -> {
@@ -103,8 +103,8 @@ public class HomeActivity extends AppCompatActivity {
                             .addFormDataPart("h_code", b.hCodeEditText.getText().toString())
                             .addFormDataPart("date", new Date().toString());
 
-                    for (Uri uri : selectedImages) {
-                        File file = getFile(uri);
+                    for (File file : selectedImages) {
+//                        File file = getFile(uri);
 
                         RequestBody requestBody = RequestBody.create(MediaType.parse("application/octet-stream"),
                                 file);
@@ -152,7 +152,7 @@ public class HomeActivity extends AppCompatActivity {
         startActivityForResult(camera_intent, PICK_CAMERA_REQUEST);
     }
 
-    public Uri bitmapToFile(Bitmap bitmap) { // File name like "image.png"
+    public File bitmapToFile(Bitmap bitmap) { // File name like "image.png"
         //create a file to write bitmap data
         File file = null;
         try {
@@ -171,11 +171,12 @@ public class HomeActivity extends AppCompatActivity {
             fos.write(bitmapdata);
             fos.flush();
             fos.close();
-            return Uri.fromFile(file);
-//            return file;
+//            return Uri.fromFile(file);
+            return file;
         } catch (Exception e) {
             runOnUiThread(() -> Toast.makeText(HomeActivity.this, "" + e.getMessage(), Toast.LENGTH_SHORT).show());
-            return Uri.fromFile(file);
+            return file;
+//            return Uri.fromFile(file);
         }
     }
 
@@ -210,7 +211,7 @@ public class HomeActivity extends AppCompatActivity {
         return Uri.fromFile(tempFile);
     }*/
 
-    public File getFile(Uri uri) throws IOException {
+    public File getFile(Uri uri) {
         File destinationFilename = new File(getFilesDir().getPath() + File.separatorChar + queryName(HomeActivity.this, uri));
         try (InputStream ins = getContentResolver().openInputStream(uri)) {
             createFileFromStream(ins, destinationFilename);
@@ -273,11 +274,14 @@ public class HomeActivity extends AppCompatActivity {
                     int count = data.getClipData().getItemCount();
                     for (int i = 0; i < count; i++) {
                         Uri imageUri = data.getClipData().getItemAt(i).getUri();
-                        selectedImages.add(imageUri);
+                        File file = getFile(imageUri);
+
+                        selectedImages.add(file);
                     }
                 } else if (data.getData() != null) {
                     Uri imageUri = data.getData();
-                    selectedImages.add(imageUri);
+                    File file = getFile(imageUri);
+                    selectedImages.add(file);
                 }
 
                 initRecyclerView();
@@ -322,7 +326,7 @@ public class HomeActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull final ViewHolderRightMessage holder, int position) {
 
-            holder.imageView.setImageURI(selectedImages.get(position));
+            holder.imageView.setImageURI(Uri.fromFile(selectedImages.get(position)));
 
         }
 
