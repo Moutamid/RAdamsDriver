@@ -344,7 +344,7 @@ public class HomeActivity extends AppCompatActivity {
             // Use the imageFile for your POST request
             selectedImages.add(cameraPhotoFile);
 
-            b.testImg.setImageURI(Uri.fromFile(cameraPhotoFile));
+//            b.testImg.setImageURI(Uri.fromFile(cameraPhotoFile));
 
 //            selectedImages.add(bitmapToFile(photo));
             initRecyclerView();
@@ -429,7 +429,7 @@ public class HomeActivity extends AppCompatActivity {
         public void onBindViewHolder(@NonNull final ViewHolderRightMessage holder, int position) {
 
             holder.imageView.setImageURI(Uri.fromFile(selectedImages.get(position)));
-            b.testImg2.setImageURI(Uri.fromFile(selectedImages.get(position)));
+//            b.testImg2.setImageURI(Uri.fromFile(selectedImages.get(position)));
 
         }
 
