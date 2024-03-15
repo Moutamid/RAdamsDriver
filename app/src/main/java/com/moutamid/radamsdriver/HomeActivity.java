@@ -44,6 +44,7 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Locale;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -108,11 +109,13 @@ public class HomeActivity extends AppCompatActivity {
                     OkHttpClient client = new OkHttpClient().newBuilder()
                             .build();
                     MediaType mediaType = MediaType.parse("text/plain");
+                    // 2024-03-15T17:30:00
+                    String date = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date());
                     MultipartBody.Builder builder = new MultipartBody.Builder().setType(MultipartBody.FORM)
                             .addFormDataPart("vehicle", Stash.getString(Constants.VEHICLE))
                             .addFormDataPart("driver", Stash.getString(Constants.FULL_NAME))
                             .addFormDataPart("h_code", b.hCodeEditText.getText().toString())
-                            .addFormDataPart("date", new Date().toString());
+                            .addFormDataPart("date", date);
 
                     for (File file : selectedImages) {
 //                        File file = getFile(uri);
@@ -161,8 +164,14 @@ public class HomeActivity extends AppCompatActivity {
     private static final int REQUEST_CAMERA_PERMISSION = 1;
 
     public void takePicture() {
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+        ) {
+            shouldShowRequestPermissionRationale(android.Manifest.permission.CAMERA);
+            shouldShowRequestPermissionRationale(android.Manifest.permission.READ_MEDIA_IMAGES);
+            shouldShowRequestPermissionRationale(android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA,android.Manifest.permission.READ_MEDIA_IMAGES,android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
         } else {
             // Permission granted, proceed with capturing the image
           //  openCamera();
@@ -371,7 +380,7 @@ public class HomeActivity extends AppCompatActivity {
 
             selectedImages.add(rotatedFile);
             initRecyclerView();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -402,10 +411,9 @@ public class HomeActivity extends AppCompatActivity {
                             selectedImages.add(rotatedFile);
                             initRecyclerView();
                         }
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
-
                 } else {
                     // Handle null imageUri
                     Log.e("ImageProcessing", "Image URI is null");
