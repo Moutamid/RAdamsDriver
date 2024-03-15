@@ -6,6 +6,9 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -29,6 +32,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.fxn.stash.Stash;
+import com.github.dhaval2404.imagepicker.ImagePicker;
 import com.moutamid.radamsdriver.databinding.ActivityHomeBinding;
 
 import java.io.ByteArrayOutputStream;
@@ -161,7 +165,12 @@ public class HomeActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
         } else {
             // Permission granted, proceed with capturing the image
-            openCamera();
+          //  openCamera();
+            ImagePicker.with(this).compress(1024)			//Final image size will be less than 1 MB(Optional)
+                    .maxResultSize(1080, 1080)
+                    .cameraOnly()
+                    .saveDir(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath())
+                    .start(PICK_CAMERA_REQUEST);
         }
     }
 
@@ -333,6 +342,40 @@ public class HomeActivity extends AppCompatActivity {
         startActivityForResult(intent, PICK_IMAGES_REQUEST);
     }
 
+    private void rotateImage(Uri imageUri, int orientation) {
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(imageUri);
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+
+            Matrix matrix = new Matrix();
+            switch (orientation) {
+                case ExifInterface.ORIENTATION_ROTATE_90:
+                    matrix.postRotate(90);
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_180:
+                    matrix.postRotate(180);
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_270:
+                    matrix.postRotate(270);
+                    break;
+                default:
+                    break;
+            }
+
+            Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            File rotatedFile = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "rotated_image.jpg");
+            FileOutputStream outputStream = new FileOutputStream(rotatedFile);
+            rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+            outputStream.flush();
+            outputStream.close();
+
+            selectedImages.add(rotatedFile);
+            initRecyclerView();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -340,14 +383,38 @@ public class HomeActivity extends AppCompatActivity {
         if (requestCode == PICK_CAMERA_REQUEST && resultCode == RESULT_OK) {
             // Image captured successfully, get the file path
 //            File imageFile = new File(getIntent().getStringExtra(MediaStore.EXTRA_OUTPUT));
+            if (data != null & data.getData() != null){
+                Log.d(TAG, "onActivityResult: " + data.getData().getPath());
+                // b.testImage.setImageBitmap(photo);
+                // Use the imageFile for your POST request
+                Uri imageUri = data.getData();
 
-            // Use the imageFile for your POST request
-            selectedImages.add(cameraPhotoFile);
+                if (imageUri != null) {
+                    ExifInterface exif = null;
+                    try {
+                        exif = new ExifInterface(imageUri.getPath());
+                        int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+                        if (orientation != ExifInterface.ORIENTATION_NORMAL) {
+                            Log.d(TAG, "onActivityResult: NOT NORMAL");
+                            rotateImage(imageUri, orientation);
+                        } else {
+                            File rotatedFile = new File(imageUri.getPath());
+                            selectedImages.add(rotatedFile);
+                            initRecyclerView();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                } else {
+                    // Handle null imageUri
+                    Log.e("ImageProcessing", "Image URI is null");
+                }
 
 //            b.testImg.setImageURI(Uri.fromFile(cameraPhotoFile));
 
 //            selectedImages.add(bitmapToFile(photo));
-            initRecyclerView();
+            }
             return;
         }
 
