@@ -68,6 +68,27 @@ public class HomeActivity extends AppCompatActivity {
     File cameraPhotoFile;
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        String path = Stash.getString("img", "");
+        if (!path.isEmpty()){
+            Stash.clear("img");
+            File rotatedFile = new File(path);
+            selectedImages = Stash.getArrayList("list", File.class);
+            selectedImages.add(rotatedFile);
+            initRecyclerView();
+            Stash.clear("list");
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Stash.clear("img");
+        Stash.clear("list");
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         b = ActivityHomeBinding.inflate(getLayoutInflater());
@@ -138,7 +159,6 @@ public class HomeActivity extends AppCompatActivity {
                     if (message.contains("Ticket added successfully!")) {
                         runOnUiThread(() -> {
                             progressDialog.dismiss();
-
                             Toast.makeText(this, "Success", Toast.LENGTH_SHORT).show();
                             finish();
                         });
@@ -166,20 +186,22 @@ public class HomeActivity extends AppCompatActivity {
     public void takePicture() {
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
         ) {
             shouldShowRequestPermissionRationale(android.Manifest.permission.CAMERA);
             shouldShowRequestPermissionRationale(android.Manifest.permission.READ_MEDIA_IMAGES);
             shouldShowRequestPermissionRationale(android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA,android.Manifest.permission.READ_MEDIA_IMAGES,android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
+            shouldShowRequestPermissionRationale(android.Manifest.permission.READ_EXTERNAL_STORAGE);
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA, android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.READ_MEDIA_IMAGES, android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
         } else {
             // Permission granted, proceed with capturing the image
-          //  openCamera();
-            ImagePicker.with(this).compress(1024)			//Final image size will be less than 1 MB(Optional)
-                    .maxResultSize(1080, 1080)
-                    .cameraOnly()
-                    .saveDir(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath())
-                    .start(PICK_CAMERA_REQUEST);
+              openCamera();
+//            ImagePicker.with(this).compress(1024)
+//                    .maxResultSize(1080, 1080)
+//                    .cameraOnly()
+//                    .saveDir(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath())
+//                    .start(PICK_CAMERA_REQUEST);
         }
     }
 
@@ -196,21 +218,56 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void openCamera() {
-        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        // Create a unique file name for the captured image
-        cameraPhotoFile = createImageFile();
-        if (cameraPhotoFile != null) {
-            Uri uri = FileProvider.getUriForFile(HomeActivity.this,
-                    getApplicationContext().getPackageName() + ".provider",
-                    new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), imageFileName));
+        ////
+        Stash.put("list", selectedImages);
+        startActivity(new Intent(this, CameraActivity.class));
+/*        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        // Ensure the camera app exists
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            // Create a temporary file to store the captured image
+            cameraPhotoFile = createImageFile();
+            if (cameraPhotoFile != null) {
+                // Get the URI of the temporary file
+                capturedImageUri = Uri.fromFile(cameraPhotoFile);
+                // Add the URI as an extra to the intent
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, capturedImageUri);
+                startActivityForResult(takePictureIntent, PICK_CAMERA_REQUEST);
+            } else {
+                Log.d(TAG, "Unable to create temporary file");
+            }
+        }*/
 
-//            Uri photoURI = Uri.fromFile(photoFile);
-            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
-            startActivityForResult(cameraIntent, PICK_CAMERA_REQUEST);
-        }
+        ///
+
+//        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+//        // Create a unique file name for the captured image
+//        cameraPhotoFile = createImageFile();
+//        if (cameraPhotoFile != null) {
+//            Uri uri = FileProvider.getUriForFile(HomeActivity.this,
+//                    getApplicationContext().getPackageName() + ".provider",
+//                    new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), imageFileName));
+//
+////            Uri photoURI = Uri.fromFile(photoFile);
+//            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+//            startActivityForResult(cameraIntent, PICK_CAMERA_REQUEST);
+//        }
     }
-
+    Uri capturedImageUri;
     String imageFileName;
+
+//    private File createImageFile() {
+//        // Create a unique file name for the captured image
+//        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+//        imageFileName = "JPEG_" + timeStamp + "_";
+//        File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+//        File imageFile = null;
+//        try {
+//            imageFile = File.createTempFile(imageFileName, ".jpg", storageDir);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        return imageFile;
+//    }
 
     private File createImageFile() {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
@@ -390,38 +447,41 @@ public class HomeActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == PICK_CAMERA_REQUEST && resultCode == RESULT_OK) {
+            Log.d(TAG, "requestCode: " + requestCode + ", resultCode: " + resultCode);
             // Image captured successfully, get the file path
 //            File imageFile = new File(getIntent().getStringExtra(MediaStore.EXTRA_OUTPUT));
-            if (data != null & data.getData() != null){
-                Log.d(TAG, "onActivityResult: " + data.getData().getPath());
-                // b.testImage.setImageBitmap(photo);
-                // Use the imageFile for your POST request
-                Uri imageUri = data.getData();
+            Log.d(TAG, "onActivityResult: " + ImagePicker.Companion.getError(data));
+            try {
+                if (data != null & data.getData() != null) {
+                    Log.d(TAG, "onActivityResult: " + data.getData().getPath());
+                    // b.testImage.setImageBitmap(photo);
+                    // Use the imageFile for your POST request
+                    Uri imageUri = data.getData();
 
-                if (imageUri != null) {
-                    ExifInterface exif = null;
-                    try {
-                        exif = new ExifInterface(imageUri.getPath());
-                        int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-                        if (orientation != ExifInterface.ORIENTATION_NORMAL) {
-                            Log.d(TAG, "onActivityResult: NOT NORMAL");
-                            rotateImage(imageUri, orientation);
-                        } else {
-                            File rotatedFile = new File(imageUri.getPath());
-                            selectedImages.add(rotatedFile);
-                            initRecyclerView();
+                    if (imageUri != null) {
+                        ExifInterface exif = null;
+                        try {
+                            exif = new ExifInterface(imageUri.getPath());
+                            int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+                            if (orientation != ExifInterface.ORIENTATION_NORMAL) {
+                                Log.d(TAG, "onActivityResult: NOT NORMAL");
+                                rotateImage(imageUri, orientation);
+                            } else {
+                                File rotatedFile = new File(imageUri.getPath());
+                                selectedImages.add(rotatedFile);
+                                initRecyclerView();
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                    } else {
+                        // Handle null imageUri
+                        Toast.makeText(this, "Image capture fail", Toast.LENGTH_SHORT).show();
+                        Log.e(TAG, "Image URI is null");
                     }
-                } else {
-                    // Handle null imageUri
-                    Log.e("ImageProcessing", "Image URI is null");
                 }
-
-//            b.testImg.setImageURI(Uri.fromFile(cameraPhotoFile));
-
-//            selectedImages.add(bitmapToFile(photo));
+            } catch (Exception e){
+                e.printStackTrace();
             }
             return;
         }
