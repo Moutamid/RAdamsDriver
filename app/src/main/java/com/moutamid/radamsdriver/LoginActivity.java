@@ -59,7 +59,7 @@ public class LoginActivity extends AppCompatActivity {
                     RequestBody body = RequestBody.create(mediaType, jsonObject.toString());
 
                     Request request = new Request.Builder()
-                            .url("http://app.ra-app.co.uk/api/login")
+                            .url("https://app.ra-app.co.uk/api/login")
                             .method("POST", body)
                             .addHeader("Content-Type", "application/json")
                             .build();

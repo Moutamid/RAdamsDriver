@@ -149,7 +149,7 @@ public class HomeActivity extends AppCompatActivity {
                     MultipartBody requestBody = builder.build();
 
                     Request request = new Request.Builder()
-                            .url("http://app.ra-app.co.uk/api/ticket/create")
+                            .url("https://app.ra-app.co.uk/api/ticket/create")
                             .method("POST", requestBody)
                             .addHeader("Authorization", "Bearer " + Stash.getString(Constants.TOKEN))
                             .build();
