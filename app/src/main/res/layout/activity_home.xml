@@ -18,49 +18,67 @@
             android:textColor="@color/black"
             android:textSize="20sp" />
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="60dp"
-            android:layout_marginTop="10dp">
+            android:layout_height="wrap_content">
 
-            <RelativeLayout
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_number_plate"
-                android:paddingVertical="4dp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent">
+                android:layout_marginStart="60dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="60dp">
 
-                <TextView
-                    android:id="@+id/numberPlateTv"
+                <RelativeLayout
+                    android:id="@+id/numberPlateCl"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/bg_number_plate"
+                    android:paddingVertical="4dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <TextView
+                        android:id="@+id/numberPlateTv"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="UK PL8TE"
+                        android:textColor="@color/black"
+                        android:textSize="35sp"
+                        android:textStyle="bold" />
+
+
+                </RelativeLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="0dp"
+                    android:background="#0808AE"
                     android:gravity="center"
-                    android:text="UK PL8TE"
-                    android:textColor="@color/black"
-                    android:textSize="35sp"
-                    android:textStyle="bold" />
+                    android:paddingHorizontal="5dp"
+                    android:text="GB"
+                    android:textColor="@color/yellow"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
 
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
-            </RelativeLayout>
+            <ImageView
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_alignParentEnd="true"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="20dp"
+                android:id="@+id/editVehicleBtn"
+                android:layout_centerVertical="true"
+                android:src="@drawable/baseline_edit_24" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="0dp"
-                android:background="#0808AE"
-                android:gravity="center"
-                android:paddingHorizontal="5dp"
-                android:text="GB"
-                android:textColor="@color/yellow"
-                android:textStyle="bold"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
+        </RelativeLayout>
 
         <TextView
             android:layout_width="match_parent"
@@ -88,6 +106,52 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="20dp"
+            android:text="Customer Type"
+            android:textColor="@color/black"
+            android:textSize="20sp" />
+
+        <RadioGroup
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_weight="3"
+            android:checkedButton="@id/radioBtnAggregates"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radioBtnAggregates"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:buttonTint="@color/black"
+                android:text="Aggregates" />
+
+            <RadioButton
+                android:id="@+id/radioBtnGrain"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:buttonTint="@color/black"
+                android:text="Grain" />
+
+
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="20dp"
+            android:drawableEnd="@drawable/baseline_keyboard_arrow_down_24"
+            android:drawablePadding="10dp"
+            android:text="Select Customer"
+            android:textColor="@color/black"
+            android:textSize="20sp" />
 
         <RelativeLayout
             android:layout_width="match_parent"

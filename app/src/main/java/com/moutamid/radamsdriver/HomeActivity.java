@@ -1,5 +1,6 @@
 package com.moutamid.radamsdriver;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -10,6 +11,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -24,6 +26,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AlertDialog.Builder;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -32,15 +35,21 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.fxn.stash.Stash;
-import com.github.dhaval2404.imagepicker.ImagePicker;
 import com.moutamid.radamsdriver.databinding.ActivityHomeBinding;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -101,7 +110,7 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 AlertDialog dialog;
-                AlertDialog.Builder builder = new AlertDialog.Builder(HomeActivity.this);
+                Builder builder = new Builder(HomeActivity.this);
                 final CharSequence[] items = {"Gallery", "Camera"};
                 builder.setItems(items, (dialog1, position) -> {
                     if (position == 0) {
@@ -179,7 +188,69 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         b.numberPlateTv.setText(Stash.getString(Constants.VEHICLE));
+
+        b.editVehicleBtn.setOnClickListener(v -> {
+
+        });
+
     }
+
+    public void getVehicles() {
+            new Thread(() -> {
+                URL google = null;
+                try {
+                    google = new URL("https://raw.githubusercontent.com/Moutamid/Moutamid/main/apps.txt");
+                } catch (final MalformedURLException e) {
+                    e.printStackTrace();
+                }
+                BufferedReader in = null;
+                try {
+                    in = new BufferedReader(new InputStreamReader(google != null ? google.openStream() : null));
+                } catch (final IOException e) {
+                    e.printStackTrace();
+                }
+                String input = null;
+                StringBuffer stringBuffer = new StringBuffer();
+                while (true) {
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                            if ((input = in != null ? in.readLine() : null) == null) break;
+                        }
+                    } catch (final IOException e) {
+                        e.printStackTrace();
+                    }
+                    stringBuffer.append(input);
+                }
+                try {
+                    if (in != null) {
+                        in.close();
+                    }
+                } catch (final IOException e) {
+                    e.printStackTrace();
+                }
+                String htmlData = stringBuffer.toString();
+
+                try {
+                    JSONObject myAppObject = new JSONObject(htmlData).getJSONObject(appName);
+
+                    boolean value = myAppObject.getBoolean("value");
+                    String msg = myAppObject.getString("msg");
+
+                    if (value) {
+                        activity.runOnUiThread(() -> {
+                            new Builder(activity)
+                                    .setMessage(msg)
+                                    .setCancelable(false)
+                                    .show();
+                        });
+                    }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }).start();
+        }
 
     private static final int REQUEST_CAMERA_PERMISSION = 1;
 
