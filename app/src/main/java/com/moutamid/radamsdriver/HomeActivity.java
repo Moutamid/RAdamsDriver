@@ -37,6 +37,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.fxn.stash.Stash;
 import com.moutamid.radamsdriver.databinding.ActivityHomeBinding;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -72,15 +73,18 @@ public class HomeActivity extends AppCompatActivity {
     private static final int PICK_CAMERA_REQUEST = 2222;
 
     private ArrayList<File> selectedImages;
-//    private ArrayList<Uri> uriImagesList;
+    private ArrayList<String> customerNamesList = new ArrayList<>();
+    private ArrayList<String> customerIDsList = new ArrayList<>();
 
     File cameraPhotoFile;
+
+    private ProgressDialog progressDialog;
 
     @Override
     protected void onResume() {
         super.onResume();
         String path = Stash.getString("img", "");
-        if (!path.isEmpty()){
+        if (!path.isEmpty()) {
             Stash.clear("img");
             File rotatedFile = new File(path);
             selectedImages = Stash.getArrayList("list", File.class);
@@ -102,6 +106,11 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         b = ActivityHomeBinding.inflate(getLayoutInflater());
         setContentView(b.getRoot());
+
+        progressDialog = new ProgressDialog(HomeActivity.this);
+        progressDialog.setCancelable(false);
+        progressDialog.setMessage("Loading...");
+        progressDialog.show();
 
         selectedImages = new ArrayList<>();
 
@@ -195,62 +204,66 @@ public class HomeActivity extends AppCompatActivity {
 
     }
 
-    public void getVehicles() {
-            new Thread(() -> {
-                URL google = null;
+
+
+    public void getCustomers() {
+        progressDialog.show();
+
+        new Thread(() -> {
+            URL google = null;
+            try {
+                google = new URL("https://app.ra-app.co.uk/api/customer/aggregate");
+            } catch (final MalformedURLException e) {
+                e.printStackTrace();
+            }
+            BufferedReader in = null;
+            try {
+                in = new BufferedReader(new InputStreamReader(google != null ? google.openStream() : null));
+            } catch (final IOException e) {
+                e.printStackTrace();
+            }
+            String input = null;
+            StringBuffer stringBuffer = new StringBuffer();
+            while (true) {
                 try {
-                    google = new URL("https://raw.githubusercontent.com/Moutamid/Moutamid/main/apps.txt");
-                } catch (final MalformedURLException e) {
-                    e.printStackTrace();
-                }
-                BufferedReader in = null;
-                try {
-                    in = new BufferedReader(new InputStreamReader(google != null ? google.openStream() : null));
-                } catch (final IOException e) {
-                    e.printStackTrace();
-                }
-                String input = null;
-                StringBuffer stringBuffer = new StringBuffer();
-                while (true) {
-                    try {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                            if ((input = in != null ? in.readLine() : null) == null) break;
-                        }
-                    } catch (final IOException e) {
-                        e.printStackTrace();
-                    }
-                    stringBuffer.append(input);
-                }
-                try {
-                    if (in != null) {
-                        in.close();
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                        if ((input = in != null ? in.readLine() : null) == null) break;
                     }
                 } catch (final IOException e) {
                     e.printStackTrace();
                 }
-                String htmlData = stringBuffer.toString();
-
-                try {
-                    JSONObject myAppObject = new JSONObject(htmlData).getJSONObject(appName);
-
-                    boolean value = myAppObject.getBoolean("value");
-                    String msg = myAppObject.getString("msg");
-
-                    if (value) {
-                        activity.runOnUiThread(() -> {
-                            new Builder(activity)
-                                    .setMessage(msg)
-                                    .setCancelable(false)
-                                    .show();
-                        });
-                    }
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                stringBuffer.append(input);
+            }
+            try {
+                if (in != null) {
+                    in.close();
                 }
+            } catch (final IOException e) {
+                e.printStackTrace();
+            }
+            String htmlData = stringBuffer.toString();
 
-            }).start();
-        }
+            try {
+                JSONArray myAppObject = new JSONObject(htmlData).getJSONArray("customers");
+
+                for (int i = 0; i < myAppObject.length(); i++) {
+                    JSONObject object = myAppObject.getJSONObject(i);
+                    customerNamesList.add(object.getString("name"));
+                    customerIDsList.add(object.getString("_id"));
+                }
+                runOnUiThread(() -> {
+                            /
+
+                    progressDialog.dismiss();
+                });
+
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+        }).start();
+    }
 
     private static final int REQUEST_CAMERA_PERMISSION = 1;
 
@@ -267,7 +280,7 @@ public class HomeActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA, android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.READ_MEDIA_IMAGES, android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
         } else {
             // Permission granted, proceed with capturing the image
-              openCamera();
+            openCamera();
 //            ImagePicker.with(this).compress(1024)
 //                    .maxResultSize(1080, 1080)
 //                    .cameraOnly()
@@ -323,6 +336,7 @@ public class HomeActivity extends AppCompatActivity {
 //            startActivityForResult(cameraIntent, PICK_CAMERA_REQUEST);
 //        }
     }
+
     Uri capturedImageUri;
     String imageFileName;
 
@@ -551,7 +565,7 @@ public class HomeActivity extends AppCompatActivity {
                         Log.e(TAG, "Image URI is null");
                     }
                 }
-            } catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             return;
