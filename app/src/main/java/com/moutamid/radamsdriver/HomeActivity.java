@@ -1,6 +1,5 @@
 package com.moutamid.radamsdriver;
 
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -14,7 +13,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -22,6 +20,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.RadioGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -30,11 +29,11 @@ import androidx.appcompat.app.AlertDialog.Builder;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.fxn.stash.Stash;
+import com.github.dhaval2404.imagepicker.ImagePicker;
 import com.moutamid.radamsdriver.databinding.ActivityHomeBinding;
 
 import org.json.JSONArray;
@@ -76,9 +75,11 @@ public class HomeActivity extends AppCompatActivity {
     private ArrayList<String> customerNamesList = new ArrayList<>();
     private ArrayList<String> customerIDsList = new ArrayList<>();
 
+    private ArrayList<String> vehiclesList = new ArrayList<>();
+
     File cameraPhotoFile;
 
-    private ProgressDialog progressDialog;
+    String CURRENT_SELECTED_CUSTOMER = "";
 
     @Override
     protected void onResume() {
@@ -106,11 +107,6 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         b = ActivityHomeBinding.inflate(getLayoutInflater());
         setContentView(b.getRoot());
-
-        progressDialog = new ProgressDialog(HomeActivity.this);
-        progressDialog.setCancelable(false);
-        progressDialog.setMessage("Loading...");
-        progressDialog.show();
 
         selectedImages = new ArrayList<>();
 
@@ -154,7 +150,8 @@ public class HomeActivity extends AppCompatActivity {
                             .addFormDataPart("vehicle", Stash.getString(Constants.VEHICLE))
                             .addFormDataPart("driver", Stash.getString(Constants.FULL_NAME))
                             .addFormDataPart("h_code", b.hCodeEditText.getText().toString())
-                            .addFormDataPart("date", date);
+                            .addFormDataPart("date", date)
+                            .addFormDataPart("customer", CURRENT_SELECTED_CUSTOMER);
 
                     for (File file : selectedImages) {
 //                        File file = getFile(uri);
@@ -199,20 +196,111 @@ public class HomeActivity extends AppCompatActivity {
         b.numberPlateTv.setText(Stash.getString(Constants.VEHICLE));
 
         b.editVehicleBtn.setOnClickListener(v -> {
-
+            getVehicles();
         });
 
+        getCustomers(Constants.AGGREGATE);
+
+        b.selectCustomerTv.setOnClickListener(v -> {
+            AlertDialog dialog;
+            Builder builder = new Builder(HomeActivity.this);
+            builder.setItems(customerNamesList.toArray(new String[0]), (dialog1, position) -> {
+                b.selectCustomerTv.setText(customerNamesList.get(position));
+                CURRENT_SELECTED_CUSTOMER = customerIDsList.get(position);
+            });
+
+            dialog = builder.create();
+            dialog.show();
+        });
+
+        b.radioGroupCustomerType.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup radioGroup, int i) {
+                if (radioGroup.getCheckedRadioButtonId() == R.id.radioBtnAggregate) {
+                    getCustomers(Constants.AGGREGATE);
+                } else if (radioGroup.getCheckedRadioButtonId() == R.id.radioBtnGrain) {
+                    getCustomers(Constants.GRAIN);
+                }
+            }
+        });
     }
 
-
-
-    public void getCustomers() {
+    public void getVehicles() {
         progressDialog.show();
 
         new Thread(() -> {
             URL google = null;
             try {
-                google = new URL("https://app.ra-app.co.uk/api/customer/aggregate");
+                google = new URL("https://app.ra-app.co.uk/api/vehicle/numbers");
+            } catch (final MalformedURLException e) {
+                e.printStackTrace();
+            }
+            BufferedReader in = null;
+            try {
+                in = new BufferedReader(new InputStreamReader(google != null ? google.openStream() : null));
+            } catch (final IOException e) {
+                e.printStackTrace();
+            }
+            String input = null;
+            StringBuffer stringBuffer = new StringBuffer();
+            while (true) {
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                        if ((input = in != null ? in.readLine() : null) == null) break;
+                    }
+                } catch (final IOException e) {
+                    e.printStackTrace();
+                }
+                stringBuffer.append(input);
+            }
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (final IOException e) {
+                e.printStackTrace();
+            }
+            String htmlData = stringBuffer.toString();
+
+            try {
+                JSONArray myAppObject = new JSONArray(htmlData);
+
+                vehiclesList.clear();
+
+                for (int i = 0; i < myAppObject.length(); i++) {
+                    JSONObject object = myAppObject.getJSONObject(i);
+                    vehiclesList.add(object.getString("number"));
+                }
+
+                runOnUiThread(() -> {
+                    progressDialog.dismiss();
+
+                    // open a popup dialog using vehicleList arraylist
+                    AlertDialog dialog;
+                    Builder builder = new Builder(HomeActivity.this);
+                    builder.setItems(vehiclesList.toArray(new String[0]), (dialog1, position) -> {
+                        b.numberPlateTv.setText(vehiclesList.get(position));
+                        Stash.put(Constants.VEHICLE, vehiclesList.get(position));
+                    });
+                    dialog = builder.create();
+                    dialog.show();
+
+                });
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+        }).start();
+    }
+
+    public void getCustomers(String customerType) {
+        progressDialog.show();
+
+        new Thread(() -> {
+            URL google = null;
+            try {
+//                google = new URL("https://app.ra-app.co.uk/api/customer/aggregate");
+                google = new URL("https://app.ra-app.co.uk/api/customer/" + customerType);
             } catch (final MalformedURLException e) {
                 e.printStackTrace();
             }
@@ -246,24 +334,27 @@ public class HomeActivity extends AppCompatActivity {
             try {
                 JSONArray myAppObject = new JSONObject(htmlData).getJSONArray("customers");
 
+                customerNamesList.clear();
+                customerIDsList.clear();
+
                 for (int i = 0; i < myAppObject.length(); i++) {
                     JSONObject object = myAppObject.getJSONObject(i);
                     customerNamesList.add(object.getString("name"));
                     customerIDsList.add(object.getString("_id"));
                 }
                 runOnUiThread(() -> {
-                            /
-
                     progressDialog.dismiss();
+                    b.selectCustomerTv.setText("Select Customer");
+                    CURRENT_SELECTED_CUSTOMER = "";
                 });
-
-
             } catch (JSONException e) {
                 e.printStackTrace();
             }
 
         }).start();
     }
+
+
 
     private static final int REQUEST_CAMERA_PERMISSION = 1;
 

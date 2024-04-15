@@ -11,6 +11,8 @@ public class Constants {
     public static final String FULL_NAME = "FULLNAME";
     public static final String VEHICLE = "VEHICLE";
     public static final String ROTATION = "ROTATION";
+    public static final String AGGREGATE = "aggregate";
+    public static final String GRAIN = "grain";
 
     public static int rotateImage(String path){
         int capturedImageOrientation = 0;

@@ -69,13 +69,13 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <ImageView
+                android:id="@+id/editVehicleBtn"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
                 android:layout_marginStart="5dp"
                 android:layout_marginEnd="20dp"
-                android:id="@+id/editVehicleBtn"
-                android:layout_centerVertical="true"
                 android:src="@drawable/baseline_edit_24" />
 
         </RelativeLayout>
@@ -120,11 +120,12 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
             android:layout_weight="3"
-            android:checkedButton="@id/radioBtnAggregates"
+            android:id="@+id/radioGroupCustomerType"
+            android:checkedButton="@id/radioBtnAggregate"
             android:orientation="horizontal">
 
             <RadioButton
-                android:id="@+id/radioBtnAggregates"
+                android:id="@+id/radioBtnAggregate"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -146,6 +147,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:id="@+id/selectCustomerTv"
             android:layout_marginTop="20dp"
             android:drawableEnd="@drawable/baseline_keyboard_arrow_down_24"
             android:drawablePadding="10dp"
