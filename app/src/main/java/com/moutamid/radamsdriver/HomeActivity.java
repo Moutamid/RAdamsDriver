@@ -135,8 +135,15 @@ public class HomeActivity extends AppCompatActivity {
         progressDialog.setMessage("Loading...");
 
         b.submitBtn.setOnClickListener(v -> {
-            if (b.hCodeEditText.getText().toString().isEmpty())
+            if (b.hCodeEditText.getText().toString().isEmpty()) {
+                Toast.makeText(this, "Enter H Code", Toast.LENGTH_SHORT).show();
                 return;
+            }
+            if (CURRENT_SELECTED_CUSTOMER.isEmpty()) {
+                Toast.makeText(this, "Select a customer", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             progressDialog.show();
             new Thread(() -> {
 
