@@ -6,11 +6,17 @@
     android:gravity="center"
     android:orientation="vertical">
 
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="40dp"
+        android:src="@drawable/logo" />
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Log in"
         android:layout_marginHorizontal="20dp"
+        android:text="Log in"
         android:textColor="@color/black"
         android:textSize="30sp"
         android:textStyle="bold" />
@@ -18,8 +24,8 @@
     <com.google.android.material.textfield.TextInputLayout
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
-        android:layout_marginHorizontal="20dp"
         android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
         android:layout_marginTop="10dp">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -34,9 +40,9 @@
 
     <com.google.android.material.textfield.TextInputLayout
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-        android:layout_marginHorizontal="20dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
         android:layout_marginTop="10dp">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -50,11 +56,11 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/loginBtn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="20dp"
         android:layout_marginTop="20dp"
-        android:id="@+id/loginBtn"
         android:background="@color/skyBlue"
         android:text="Log in"
         android:textColor="@color/white" />

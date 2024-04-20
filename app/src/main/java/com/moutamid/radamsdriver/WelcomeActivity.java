@@ -3,6 +3,7 @@ package com.moutamid.radamsdriver;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -42,5 +43,14 @@ public class WelcomeActivity extends AppCompatActivity {
             startActivity(new Intent(WelcomeActivity.this, HomeActivity.class));
         });
 
+        b.logoutBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Stash.clearAll();
+                Toast.makeText(WelcomeActivity.this, "Logged out", Toast.LENGTH_SHORT).show();
+                finish();
+                startActivity(new Intent(WelcomeActivity.this, LoginActivity.class));
+            }
+        });
     }
 }
